@@ -58,12 +58,21 @@ def health():
     return {"status": "ok"}
 
 @app.get("/checkins")
-def list_checkins():
+def list_checkins(mood: str | None = None, activity: str | None = None):
     try:
         with get_connection() as conn:
-            rows = conn.execute(
-                "SELECT id, mood, activity, note FROM checkins ORDER BY id"
-            ).fetchall()
+            query = "SELECT id, mood, activity, note FROM checkins WHERE 1=1"
+            params = []
+            
+            if mood:
+                query += " AND mood = %s"
+                params.append(mood)
+            if activity:
+                query += " AND activity = %s"
+                params.append(activity)
+                
+            query += " ORDER BY id"
+            rows = conn.execute(query, params).fetchall()
             return rows
     except psycopg.OperationalError:
         raise HTTPException(
